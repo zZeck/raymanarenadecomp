@@ -14,6 +14,8 @@ const char * const raymanArena2 = reinterpret_cast<char*>(0x005d83d0); //"Rayman
 
 const char * const pauseFormat = reinterpret_cast<char*>(0x005d83c0); //"%s - pause"
 const char * const restoreFormat = reinterpret_cast<char*>(0x005d839c); //"%s - restoring data... please wait"
+const char * const pleaseRunSetup = reinterpret_cast<char*>(0x005d8334); //"Please run the %s setup."
+const char * const notInitialized = reinterpret_cast<char*>(0x005d8320); //"%s not initialized."
 
 const char * const s_UbiSoftUbiini_005d8388_0_4_ = reinterpret_cast<char*>(0x005d8388); //"/UbiSoft/Ubi.ini"
 const char * const s_UbiSoftUbiini_005d8388_4_4_ = reinterpret_cast<char*>(0x005d8388 + 4);
@@ -25,13 +27,18 @@ const char * const s_Directory_005d8374 = reinterpret_cast<char*>(0x005d837); //
 const char * const adapterSettingKey = reinterpret_cast<char*>(0x005d836c); //"Adapter"
 const char * const identifierSettingKey = reinterpret_cast<char*>(0x005d8360); //"Identifier"
 const char * const s_Gli_Mode_005d8354 = reinterpret_cast<char*>(0x005d8354); //"Gli_Mode"
-char * const lpDefault_005d8380 = reinterpret_cast<char*>(0x005d8380); //lpDefault for GetPrivateProfileStringA
+char * const None = reinterpret_cast<char*>(0x005d8380); //"None"
 char * const lpDefault_005f1108 = reinterpret_cast<char*>(0x005f1108); //lpDefault for GetPrivateProfileStringA
 
-char * const _String_00646760 = reinterpret_cast<char*>(0x00646760);
-char * const DAT_0064675e = reinterpret_cast<char*>(0x0064675e);
+char * const arenaDirectoryPath = reinterpret_cast<char*>(0x00646760);
 
-unsigned int * const DAT_0079c028 = reinterpret_cast<unsigned int *>(0x0079c028);//DAT_0079c02
+unsigned int * const firstCharOfGliMode = reinterpret_cast<unsigned int *>(0x0079c028);//DAT_0079c02
+HANDLE* DAT_0079c440 = reinterpret_cast<HANDLE*>(0x0079c440);//DAT_0079c440
+HANDLE* duplicatedHandle = reinterpret_cast<HANDLE*>(0x0079c448);//_DAT_0079c448
+char * const DAT_0079c460 = reinterpret_cast<char *>(0x0079c460);//DAT_0079c460
+char * const _SubStr_005d8350 = reinterpret_cast<char * const>(0x005d8350);//_SubStr_005d8350
+HWND windowHwnd = reinterpret_cast<HWND>(0x0079c444);//DAT_0079c444
+unsigned int * const DAT_0079c034 = reinterpret_cast<unsigned int *>(0x0079c034);//DAT_0079c034
 
 auto FUN_0042fa90 = reinterpret_cast<void(*)()>(0x0042fa90);
 auto FUN_00401b80 = reinterpret_cast<int(*)(HINSTANCE, WORD, unsigned int)>(0x00401b80);
@@ -50,235 +57,135 @@ auto FUN_00401210 = reinterpret_cast<void(*)()>(0x00401210);
 auto FUN_0040e130 = reinterpret_cast<void(*)()>(0x0040e130);
 auto FUN_004024a0 = reinterpret_cast<void(*)(char*, char*, int)>(0x004024a0);
 
-int initializeWindowsStuff(HINSTANCE param_1,int aStatusFromCaller,char *param_3,WORD wShowWindowIGNORED)
+int initializeWindowsStuff(HINSTANCE hInstance,int aStatusFromCaller,char *param_3,WORD wShowWindowIGNORED)
 {
-  char currentPathChar;
-  LPSTR commandLine;
-  char *windowsDirectoryPathTemp;
-  DWORD mutexErrorCode;
-  HANDLE hTargetProcessHandle;
-  HANDLE hSourceHandle;
-  HANDLE hSourceProcessHandle;
-  HWND hWnd;
-  int iVar5;
-  int iVar6;
-  int iVar7;
-  int windowsPathLengthNegative;
-  unsigned int uVar9;
-  char *windowsDirectoryPathTemp2;
-  HANDLE *lpTargetHandle;
-  BOOL BVar11;
-  DWORD dwOptions;
-  tagRECT *lpRect;
-  PVOID pvParam;
-  HANDLE local_620;
-  UINT UStack1564;
-  tagRECT tStack1560;
-  char settingsString [260];
-  char local_400 [256];
-  char local_300 [256];
-  char local_200 [256];
-  char local_100 [256];
-  
   sprintf(mutexName,raymanArena1,raymanArena2);
   sprintf(className,raymanArena1,raymanArena2);
   sprintf(windowTextA2,pauseFormat,raymanArena2);
   sprintf(windowTextA3,restoreFormat,raymanArena2);
-  if (aStatusFromCaller != 0) {
-    return ExitCodeFail;
-  }
-  char windowsDirectoryPath [260];
-  GetWindowsDirectoryA(windowsDirectoryPath,260);
-  windowsPathLengthNegative = -1;
-  windowsDirectoryPathTemp = windowsDirectoryPath;
-  do {
-    windowsDirectoryPathTemp2 = windowsDirectoryPathTemp;
-    if (windowsPathLengthNegative == 0) break;
-    windowsPathLengthNegative = windowsPathLengthNegative + -1;
-    windowsDirectoryPathTemp2 = windowsDirectoryPathTemp + 1;
-    currentPathChar = *windowsDirectoryPathTemp;
-    windowsDirectoryPathTemp = windowsDirectoryPathTemp2;
-  } while (currentPathChar != '\0');
-  *(unsigned int *)(windowsDirectoryPathTemp2 + -1) = *(unsigned int*)s_UbiSoftUbiini_005d8388_0_4_;
-  *(unsigned int *)(windowsDirectoryPathTemp2 + 3) = *(unsigned int*)s_UbiSoftUbiini_005d8388_4_4_;
-  *(unsigned int *)(windowsDirectoryPathTemp2 + 7) = *(unsigned int*)s_UbiSoftUbiini_005d8388_8_4_;
-  *(unsigned int *)(windowsDirectoryPathTemp2 + 11) = *(unsigned int*)s_UbiSoftUbiini_005d8388_12_4_;
-  windowsDirectoryPathTemp2[15] = s_UbiSoftUbiini_005d8388[16];
-  commandLine = GetCommandLineA();
-  windowsDirectoryPathTemp = commandLine + 1;
-  windowsPathLengthNegative = -(int)windowsDirectoryPathTemp;
-  do {
-    currentPathChar = *windowsDirectoryPathTemp;
-    windowsDirectoryPathTemp[(int)(settingsString + windowsPathLengthNegative)] = currentPathChar;
-    windowsDirectoryPathTemp = windowsDirectoryPathTemp + 1;
-  } while (currentPathChar != '\0');
-  windowsDirectoryPathTemp = strrchr(settingsString,'\\');
-  if (windowsDirectoryPathTemp == (char *)0x0) {
+
+  if (aStatusFromCaller != 0) return ExitCodeFail;
+
+  char ubiIniPath [260];
+  GetWindowsDirectoryA(ubiIniPath,260);
+  auto endPosition = strnlen_s(ubiIniPath, SIZE_MAX);
+  strcpy(ubiIniPath + endPosition, s_UbiSoftUbiini_005d8388_0_4_);
+
+  auto commandLine = GetCommandLineA();//this returns a string in ""
+  char stringScratchSpace [260];
+  strcpy(stringScratchSpace, commandLine + 1);//moves past the first "
+
+  auto lastSlashPointer = strrchr(stringScratchSpace,'\\');
+  if (lastSlashPointer == nullptr) { //not sure how the commandLine could have no slash in it.
     GetPrivateProfileStringA
-              (raymanArena2, s_Directory_005d8374,lpDefault_005d8380,settingsString,
-               0xff,windowsDirectoryPath);
-    windowsPathLengthNegative = _stricmp(settingsString,lpDefault_005d8380);
+              (raymanArena2, s_Directory_005d8374,None,stringScratchSpace,
+               0xff,ubiIniPath);
+    auto settingsCompareDefaultResult = _stricmp(stringScratchSpace,None);
+      auto gotRequestedSetting = settingsCompareDefaultResult != 0;
+      if (gotRequestedSetting) {
+        _chdir(stringScratchSpace);
+      }
   } else {
-    windowsDirectoryPathTemp = strrchr(settingsString,'\\');
-    *windowsDirectoryPathTemp = '\0';
-    windowsPathLengthNegative = _chdir(settingsString);
-    if (windowsPathLengthNegative != -1) goto LAB_004017f3;
-    GetPrivateProfileStringA
-              (raymanArena2,s_Directory_005d8374,lpDefault_005d8380,settingsString,
-               0xff,windowsDirectoryPath);
-    windowsPathLengthNegative = _stricmp(settingsString,lpDefault_005d8380);
-  }
-  if (windowsPathLengthNegative != 0) {
-    _chdir(settingsString);
-  }
-LAB_004017f3:
-  windowsPathLengthNegative = 0;
-  do {
-    currentPathChar = settingsString[windowsPathLengthNegative];
-    _String_00646760[windowsPathLengthNegative] = currentPathChar;
-    windowsPathLengthNegative = windowsPathLengthNegative + 1;
-  } while (currentPathChar != '\0');
-  _strlwr(_String_00646760);
-  windowsPathLengthNegative = -1;
-  windowsDirectoryPathTemp = _String_00646760;
-  do {
-    if (windowsPathLengthNegative == 0) break;
-    windowsPathLengthNegative = windowsPathLengthNegative + -1;
-    currentPathChar = *windowsDirectoryPathTemp;
-    windowsDirectoryPathTemp = windowsDirectoryPathTemp + 1;
-  } while (currentPathChar != '\0');
-joined_r0x00401820:
-  if (windowsPathLengthNegative != -2) {
-    uVar9 = 0xffffffff; //are these things -1 or positive max?
-    windowsDirectoryPathTemp = _String_00646760;
-    do {
-      if (uVar9 == 0) break;
-      uVar9 = uVar9 - 1;
-      currentPathChar = *windowsDirectoryPathTemp;
-      windowsDirectoryPathTemp = windowsDirectoryPathTemp + 1;
-    } while (currentPathChar != '\0');
-    if (DAT_0064675e[~uVar9] != '\\') goto LAB_0040185d;
-    uVar9 = 0xffffffff;
-    windowsDirectoryPathTemp = _String_00646760;
-    do {
-      if (uVar9 == 0) break;
-      uVar9 = uVar9 - 1;
-      currentPathChar = *windowsDirectoryPathTemp;
-      windowsDirectoryPathTemp = windowsDirectoryPathTemp + 1;
-    } while (currentPathChar != '\0');
-    DAT_0064675e[~uVar9] = 0;
-    windowsPathLengthNegative = -1;
-    windowsDirectoryPathTemp = _String_00646760;
-    do {
-      if (windowsPathLengthNegative == 0) break;
-      windowsPathLengthNegative = windowsPathLengthNegative + -1;
-      currentPathChar = *windowsDirectoryPathTemp;
-      windowsDirectoryPathTemp = windowsDirectoryPathTemp + 1;
-    } while (currentPathChar != '\0');
-    goto joined_r0x00401820;
-  }
-LAB_0040185d:
-  CreateMutexA(nullptr,true,mutexName);
-  mutexErrorCode = GetLastError();
-  if (mutexErrorCode == ERROR_ALREADY_EXISTS) {
-    return ExitCodeFail;
-  }
-  GetWindowsDirectoryA(windowsDirectoryPath,260);
-  windowsPathLengthNegative = -1;
-  windowsDirectoryPathTemp = windowsDirectoryPath;
-  do {
-    windowsDirectoryPathTemp2 = windowsDirectoryPathTemp;
-    if (windowsPathLengthNegative == 0) break;
-    windowsPathLengthNegative = windowsPathLengthNegative + -1;
-    windowsDirectoryPathTemp2 = windowsDirectoryPathTemp + 1;
-    currentPathChar = *windowsDirectoryPathTemp;
-    windowsDirectoryPathTemp = windowsDirectoryPathTemp2;
-  } while (currentPathChar != '\0');
-  *(unsigned int *)(windowsDirectoryPathTemp2 + -1) = *(unsigned int*)s_UbiSoftUbiini_005d8388_0_4_;
-  *(unsigned int *)(windowsDirectoryPathTemp2 + 3) = *(unsigned int*)s_UbiSoftUbiini_005d8388_4_4_;
-  *(unsigned int *)(windowsDirectoryPathTemp2 + 7) = *(unsigned int*)s_UbiSoftUbiini_005d8388_8_4_;
-  *(unsigned int *)(windowsDirectoryPathTemp2 + 11) = *(unsigned int*)s_UbiSoftUbiini_005d8388_12_4_;
-  windowsDirectoryPathTemp2[15] = s_UbiSoftUbiini_005d8388[16];
-  GetPrivateProfileStringA
-            (raymanArena2,adapterSettingKey,lpDefault_005f1108,local_400,0xff,windowsDirectoryPath
-            );
-  GetPrivateProfileStringA
-            (raymanArena2,identifierSettingKey,lpDefault_005f1108,local_300,0xff,
-             windowsDirectoryPath);
-  GetPrivateProfileStringA
-            (raymanArena2,s_Gli_Mode_005d8354,lpDefault_005f1108,local_100,0xff,
-             windowsDirectoryPath);
-  if (((local_400[0] != '\0') && (local_300[0] != '\0')) && (local_100[0] != '\0')) {
-    *DAT_0079c028 = (unsigned int)(local_100[0] != '0');
-    FUN_0042fa90();
-    dwOptions = 2;
-    BVar11 = 0;
-    lpTargetHandle = &local_620;
-    mutexErrorCode = 0;
-    *(HINSTANCE*)0x0079c440 = param_1;
-    hTargetProcessHandle = GetCurrentProcess();
-    hSourceHandle = GetCurrentThread();
-    hSourceProcessHandle = GetCurrentProcess();
-    DuplicateHandle(hSourceProcessHandle,hSourceHandle,hTargetProcessHandle,lpTargetHandle,mutexErrorCode,
-                    BVar11,dwOptions);
-    *(HANDLE*)0x0079c448 = local_620;
-    windowsDirectoryPathTemp = param_3;
-    do {
-      currentPathChar = *windowsDirectoryPathTemp;
-      windowsDirectoryPathTemp[(int)0x0079c460 - (int)param_3] = currentPathChar;
-      windowsDirectoryPathTemp = windowsDirectoryPathTemp + 1;
-    } while (currentPathChar != '\0');
-    SetErrorMode(1);
-    windowsDirectoryPathTemp = strstr(param_3,(char *)0x005d8350);
-    if (windowsDirectoryPathTemp == (char *)0x0) {
-      FUN_00401000();
-      windowsPathLengthNegative = FUN_00401b80(param_1,wShowWindowIGNORED,*DAT_0079c028);
-      if (windowsPathLengthNegative == 0) {
-        return ExitCodeFail;
+    *lastSlashPointer = '\0'; //terminate path at last slash, just before the slash. This will also remove the trailing " from the command line
+    auto changedDirectoryResult = _chdir(stringScratchSpace);
+    auto changedWorkingDirectory = changedDirectoryResult != -1;
+    if (!changedWorkingDirectory)
+    {
+      GetPrivateProfileStringA
+              (raymanArena2,s_Directory_005d8374,None,stringScratchSpace,
+               0xff,ubiIniPath);
+      auto settingsCompareDefaultResult = _stricmp(stringScratchSpace,None);
+      auto gotRequestedSetting = settingsCompareDefaultResult != 0;
+      if (gotRequestedSetting) {
+        _chdir(stringScratchSpace);
       }
-      FUN_004012f0();
-      FUN_00401300();
-      windowsPathLengthNegative = FUN_004b4bb0();
-      if (windowsPathLengthNegative != 0) {
-        FUN_004b1230();
-        windowsPathLengthNegative = FUN_004b4c20();
-        if (windowsPathLengthNegative == 0) {
-          return ExitCodeFail;
-        }
-      }
-      SND_PrintUsedStaticMemory();
-      FUN_0040df70();
-      lpRect = &tStack1560;
-      hWnd = GetDesktopWindow();
-      GetWindowRect(hWnd,lpRect);
-      BVar11 = 1;
-      windowsPathLengthNegative = FUN_0040db70();
-      windowsPathLengthNegative = windowsPathLengthNegative + 0x20;
-      iVar5 = FUN_0040db60();
-      iVar5 = iVar5 + 0xc;
-      iVar6 = FUN_0040db70();
-      iVar6 = (tStack1560.bottom - iVar6) / 2;
-      iVar7 = FUN_0040db60();
-      MoveWindow((HWND)0x0079c444,(tStack1560.right - iVar7) / 2,iVar6,iVar5,windowsPathLengthNegative,BVar11);
-      FUN_004010b0();
-      SystemParametersInfoA(0x10,0,&UStack1564,0);
-      SystemParametersInfoA(0x11,0,(PVOID)0x0,0);
-      ShowCursor(0);
-      pvParam = 0;
-      SystemParametersInfoA(0x61,1,&pvParam,0);
-      *(int*)0x0079c034 = 1;
-      FUN_00401210();
-      FUN_0040e130();
-      pvParam = 0;
-      SystemParametersInfoA(0x61,0,&pvParam,0);
-      ShowCursor(1);
-      SystemParametersInfoA(0x11,UStack1564,(PVOID)0x0,0);
-      CloseHandle(local_620);
     }
-    return 0;
   }
-  sprintf(settingsString,(char*)0x005d8334,raymanArena2);
-  sprintf(local_200,(char*)0x005d8320,raymanArena2);
-  FUN_004024a0(settingsString,local_200,0);
-  exit(ExitCodeFail);
+  strcpy(arenaDirectoryPath, stringScratchSpace);
+  _strlwr(arenaDirectoryPath);
+  for(auto pathIndexFromBack = strnlen_s(arenaDirectoryPath, SIZE_MAX) -1; pathIndexFromBack >= 0; pathIndexFromBack -= 1) {
+    auto isBackslash = arenaDirectoryPath[pathIndexFromBack] == '\\';
+    if (!isBackslash) break;
+    arenaDirectoryPath[pathIndexFromBack] = '\0';
+  }
+
+  CreateMutexA(nullptr,true,mutexName);
+  if (GetLastError() == ERROR_ALREADY_EXISTS) return ExitCodeFail;
+
+  GetWindowsDirectoryA(ubiIniPath,260);
+  auto endPosition2 = strnlen_s(ubiIniPath, SIZE_MAX);
+  strcpy(ubiIniPath + endPosition2, s_UbiSoftUbiini_005d8388_0_4_);
+  char adapterNumber [256];
+  GetPrivateProfileStringA
+            (raymanArena2,adapterSettingKey,lpDefault_005f1108,adapterNumber,0xff,ubiIniPath
+            );
+  char displayDeviceGuid [256];
+  GetPrivateProfileStringA
+            (raymanArena2,identifierSettingKey,lpDefault_005f1108,displayDeviceGuid,0xff,
+             ubiIniPath);
+  char gliMode [256];
+  GetPrivateProfileStringA
+            (raymanArena2,s_Gli_Mode_005d8354,lpDefault_005f1108,gliMode,0xff,
+             ubiIniPath);
+
+  if (((adapterNumber[0] == '\0') || (displayDeviceGuid[0] == '\0')) || (gliMode[0] == '\0')) {
+    sprintf(stringScratchSpace,pleaseRunSetup,raymanArena2);
+    char raymanArenaNotInitialized [256];
+    sprintf(raymanArenaNotInitialized,notInitialized,raymanArena2);
+    FUN_004024a0(stringScratchSpace,raymanArenaNotInitialized,0);
+    exit(ExitCodeFail);
+  }
+
+  *firstCharOfGliMode = (unsigned int)(gliMode[0] != '0');
+  FUN_0042fa90();
+  *DAT_0079c440 = hInstance;
+  auto currentProcessHandle = GetCurrentProcess();
+  auto currentThread = GetCurrentThread();
+  DuplicateHandle(currentProcessHandle,currentThread,currentProcessHandle,duplicatedHandle,0,false,DUPLICATE_SAME_ACCESS);
+  strcpy(DAT_0079c460, param_3);
+  SetErrorMode(1);
+  lastSlashPointer = strstr(param_3,_SubStr_005d8350);
+
+  if (lastSlashPointer != nullptr) return 0;
+
+  FUN_00401000();
+  auto someCode = FUN_00401b80(hInstance,wShowWindowIGNORED,*firstCharOfGliMode);
+
+  if (someCode == 0) return ExitCodeFail;
+
+  FUN_004012f0();
+  FUN_00401300();
+  someCode = FUN_004b4bb0();
+  if (someCode != 0) {
+    FUN_004b1230();
+    someCode = FUN_004b4c20();
+    if (someCode == 0) return ExitCodeFail;
+  }
+  SND_PrintUsedStaticMemory();
+  FUN_0040df70();
+  auto hWnd = GetDesktopWindow();
+  tagRECT lpRect;
+  GetWindowRect(hWnd,&lpRect);
+  auto height = FUN_0040db70() + 0x20;
+  auto width = FUN_0040db60() + 12;
+  auto yPos = (lpRect.bottom - FUN_0040db70()) / 2;
+  auto xPos = (lpRect.right - FUN_0040db60()) / 2;
+  MoveWindow(windowHwnd,xPos,yPos,width,height,true);
+  FUN_004010b0();
+  unsigned int screenSaverState;
+  SystemParametersInfoA(SPI_GETSCREENSAVEACTIVE,0,&screenSaverState,0);
+  SystemParametersInfoA(SPI_SETSCREENSAVEACTIVE,false,nullptr,0);
+  ShowCursor(0);
+  PVOID pvParam;
+  SystemParametersInfoA(SPI_SETSCREENSAVERRUNNING,true,&pvParam,0);
+  *DAT_0079c034 = 1;
+  FUN_00401210();
+  FUN_0040e130();
+  pvParam = nullptr;
+  SystemParametersInfoA(SPI_SETSCREENSAVERRUNNING,false,&pvParam,0);
+  ShowCursor(1);
+  SystemParametersInfoA(SPI_SETSCREENSAVEACTIVE,screenSaverState,nullptr,0);
+  CloseHandle(duplicatedHandle);
+
+  return 0;
 }
