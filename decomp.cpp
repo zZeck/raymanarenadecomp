@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <direct.h>
 
+
 constexpr int ExitCodeFail = -1;
 
 char * const mutexName = reinterpret_cast<char*>(0x0079c040);
@@ -17,7 +18,7 @@ const char * const restoreFormat = reinterpret_cast<char*>(0x005d839c); //"%s - 
 const char * const pleaseRunSetup = reinterpret_cast<char*>(0x005d8334); //"Please run the %s setup."
 const char * const notInitialized = reinterpret_cast<char*>(0x005d8320); //"%s not initialized."
 
-const char * const s_UbiSoftUbiini_005d8388_0_4_ = reinterpret_cast<char*>(0x005d8388); //"/UbiSoft/Ubi.ini"
+const char * const s_UbiSoftUbiini_005d8388_0_4_ = reinterpret_cast<decltype(s_UbiSoftUbiini_005d8388_0_4_)>(0x005d8388); //"/UbiSoft/Ubi.ini"
 const char * const s_UbiSoftUbiini_005d8388_4_4_ = reinterpret_cast<char*>(0x005d8388 + 4);
 const char * const s_UbiSoftUbiini_005d8388_8_4_ = reinterpret_cast<char*>(0x005d8388 + 8);
 const char * const s_UbiSoftUbiini_005d8388_12_4_ = reinterpret_cast<char*>(0x005d8388 + 12);
@@ -57,12 +58,31 @@ auto FUN_00401210 = reinterpret_cast<void(*)()>(0x00401210);
 auto FUN_0040e130 = reinterpret_cast<void(*)()>(0x0040e130);
 auto FUN_004024a0 = reinterpret_cast<void(*)(char*, char*, int)>(0x004024a0);
 
-int initializeWindowsStuff(HINSTANCE hInstance,int aStatusFromCaller,char *param_3,WORD wShowWindowIGNORED)
+char* (*msvcrt_strrchr)(char* const, char const);
+decltype(_chdir) *msvcrt__chdir;
+decltype(_strlwr) *msvcrt__strlwr;
+decltype(_stricmp) *msvcrt__stricmp;
+decltype(exit) *msvcrt_exit;
+decltype(sprintf) *msvcrt_sprintf;
+char* (*msvcrt_strstr)(char const* const, char const* const);
+
+void link() {
+  auto msvcrt = LoadLibrary(L"msvcrt.dll");
+  msvcrt_strrchr = reinterpret_cast<decltype(msvcrt_strrchr)>(GetProcAddress(msvcrt, "strrchr"));
+  msvcrt__chdir = reinterpret_cast<decltype(msvcrt__chdir)>(GetProcAddress(msvcrt, "_chdir"));
+  msvcrt__strlwr = reinterpret_cast<decltype(msvcrt__strlwr)>(GetProcAddress(msvcrt, "_strlwr"));
+  msvcrt__stricmp = reinterpret_cast<decltype(msvcrt__stricmp)>(GetProcAddress(msvcrt, "_stricmp"));
+  msvcrt_exit = reinterpret_cast<decltype(msvcrt_exit)>(GetProcAddress(msvcrt, "exit"));
+  msvcrt_sprintf = reinterpret_cast<decltype(msvcrt_sprintf)>(GetProcAddress(msvcrt, "sprintf"));
+  msvcrt_strstr = reinterpret_cast<decltype(msvcrt_strstr)>(GetProcAddress(msvcrt, "strstr"));
+}
+
+int initializeWindowsStuff(HINSTANCE hInstance,int aStatusFromCaller, const char * const param_3,WORD wShowWindowIGNORED)
 {
-  sprintf(mutexName,raymanArena1,raymanArena2);
-  sprintf(className,raymanArena1,raymanArena2);
-  sprintf(windowTextA2,pauseFormat,raymanArena2);
-  sprintf(windowTextA3,restoreFormat,raymanArena2);
+  msvcrt_sprintf(mutexName,raymanArena1,raymanArena2);
+  msvcrt_sprintf(className,raymanArena1,raymanArena2);
+  msvcrt_sprintf(windowTextA2,pauseFormat,raymanArena2);
+  msvcrt_sprintf(windowTextA3,restoreFormat,raymanArena2);
 
   if (aStatusFromCaller != 0) return ExitCodeFail;
 
@@ -75,34 +95,34 @@ int initializeWindowsStuff(HINSTANCE hInstance,int aStatusFromCaller,char *param
   char stringScratchSpace [260];
   strcpy(stringScratchSpace, commandLine + 1);//moves past the first "
 
-  auto lastSlashPointer = strrchr(stringScratchSpace,'\\');
+  auto lastSlashPointer = msvcrt_strrchr(stringScratchSpace,'\\');
   if (lastSlashPointer == nullptr) { //not sure how the commandLine could have no slash in it.
     GetPrivateProfileStringA
               (raymanArena2, s_Directory_005d8374,None,stringScratchSpace,
                0xff,ubiIniPath);
-    auto settingsCompareDefaultResult = _stricmp(stringScratchSpace,None);
+    auto settingsCompareDefaultResult = msvcrt__stricmp(stringScratchSpace,None);
       auto gotRequestedSetting = settingsCompareDefaultResult != 0;
       if (gotRequestedSetting) {
-        _chdir(stringScratchSpace);
+        msvcrt__chdir(stringScratchSpace);
       }
   } else {
     *lastSlashPointer = '\0'; //terminate path at last slash, just before the slash. This will also remove the trailing " from the command line
-    auto changedDirectoryResult = _chdir(stringScratchSpace);
+    auto changedDirectoryResult = msvcrt__chdir(stringScratchSpace);
     auto changedWorkingDirectory = changedDirectoryResult != -1;
     if (!changedWorkingDirectory)
     {
       GetPrivateProfileStringA
               (raymanArena2,s_Directory_005d8374,None,stringScratchSpace,
                0xff,ubiIniPath);
-      auto settingsCompareDefaultResult = _stricmp(stringScratchSpace,None);
+      auto settingsCompareDefaultResult = msvcrt__stricmp(stringScratchSpace,None);
       auto gotRequestedSetting = settingsCompareDefaultResult != 0;
       if (gotRequestedSetting) {
-        _chdir(stringScratchSpace);
+        msvcrt__chdir(stringScratchSpace);
       }
     }
   }
   strcpy(arenaDirectoryPath, stringScratchSpace);
-  _strlwr(arenaDirectoryPath);
+  msvcrt__strlwr(arenaDirectoryPath);
   for(auto pathIndexFromBack = strnlen_s(arenaDirectoryPath, SIZE_MAX) -1; pathIndexFromBack >= 0; pathIndexFromBack -= 1) {
     auto isBackslash = arenaDirectoryPath[pathIndexFromBack] == '\\';
     if (!isBackslash) break;
@@ -129,11 +149,11 @@ int initializeWindowsStuff(HINSTANCE hInstance,int aStatusFromCaller,char *param
              ubiIniPath);
 
   if (((adapterNumber[0] == '\0') || (displayDeviceGuid[0] == '\0')) || (gliMode[0] == '\0')) {
-    sprintf(stringScratchSpace,pleaseRunSetup,raymanArena2);
+    msvcrt_sprintf(stringScratchSpace,pleaseRunSetup,raymanArena2);
     char raymanArenaNotInitialized [256];
-    sprintf(raymanArenaNotInitialized,notInitialized,raymanArena2);
+    msvcrt_sprintf(raymanArenaNotInitialized,notInitialized,raymanArena2);
     FUN_004024a0(stringScratchSpace,raymanArenaNotInitialized,0);
-    exit(ExitCodeFail);
+    msvcrt_exit(ExitCodeFail);
   }
 
   *firstCharOfGliMode = (unsigned int)(gliMode[0] != '0');
@@ -144,9 +164,9 @@ int initializeWindowsStuff(HINSTANCE hInstance,int aStatusFromCaller,char *param
   DuplicateHandle(currentProcessHandle,currentThread,currentProcessHandle,duplicatedHandle,0,false,DUPLICATE_SAME_ACCESS);
   strcpy(DAT_0079c460, param_3);
   SetErrorMode(1);
-  lastSlashPointer = strstr(param_3,_SubStr_005d8350);
+  auto lastwhat = msvcrt_strstr(param_3,_SubStr_005d8350);
 
-  if (lastSlashPointer != nullptr) return 0;
+  if (lastwhat != nullptr) return 0;
 
   FUN_00401000();
   auto someCode = FUN_00401b80(hInstance,wShowWindowIGNORED,*firstCharOfGliMode);
